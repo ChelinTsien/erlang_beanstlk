@@ -218,7 +218,7 @@ addserver(Server, Serverlist) ->
        {ok, Socket} ->
             Server1 = Server#server{socket=Socket},
             Position = location(Server1),
-            New = lists:map(fun(P) -> {P, Server} end, Position),
+            New = lists:map(fun(P) -> {P, Server1} end, Position),
             ServerNum = Serverlist#server_ring.server_num +1,
             _Serverlist1 = Serverlist#server_ring{
                  sorted = false,
