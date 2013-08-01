@@ -241,7 +241,7 @@ findserver(Key, Serverlist) ->
             Buckets = populate_buckets(Servers),
             Serverlist#server_ring{buckets = Buckets, precomputed=true}
     end,
-    Hash = bnot erlang:crc32(?INIT_SEED, Key),
+    Hash = erlang:crc32(Key),
     Pos = Hash rem ?CONSISTENT_BUCKETS,
     lists:nth(Pos,Serverlist#server_ring.buckets).
    
