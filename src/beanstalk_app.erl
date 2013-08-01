@@ -40,8 +40,8 @@ stop(_State) ->
 %% @doc API to start application.
 %%
 -spec start() ->
-                   ok |
-                   {error, Reason :: term()}.
+                  ok |
+                  {error, Reason :: term()}.
 start() ->
     application:start(beanstalk).
 

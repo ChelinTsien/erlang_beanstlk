@@ -63,7 +63,7 @@ handle_call({addserver, Server}, _From, State) ->
         {error, Error} ->
             {stop, Error, State};
         NewState -> 
-            {reply, ok, NewState}
+            {reply, NewState, NewState}
     end;
 
 handle_call(Command = {watch, Tube}, _From, State) -> 
@@ -192,17 +192,10 @@ server_response(Server, State) ->
 
 %%% functions internal to your implementation
 connecct(Server, State) -> 
-    case gen_tcp:connect(Server#server.host, Server#server.port, [binary, {packet, 0}, {active, false}]) of
-       {ok, Socket} ->
-           Server1 = Server#server{socket=Socket},
-           case  addserver(Server1, State) of
-               ok -> NewState=State;
-               NewState -> NewState
-           end,
-           NewState;
-       Error ->
-         {error, Error}
-   end.
+    case lists:member(Server, State#server_ring.server_list) of
+         true -> State;
+         false -> addserver(Server, State)
+    end.
 
 %% Generate the positions in the table for the specified target.
 %%
@@ -216,15 +209,15 @@ location(Server) ->
 location(_Server, _SEED, _Points, _Points , Acc) ->
    Acc;
 location(Server, SEED, Points, N, Acc) when N < Points -> 
-   Position = bnot erlang:crc32(SEED, integer_to_list(N)),
+   Position =  erlang:crc32(SEED, integer_to_list(N)),
    Acc1 = [Position|Acc],
    location(Server, SEED, Points, N+1, Acc1). 
 
 addserver(Server, Serverlist) ->
-    case lists:member(Server, Serverlist#server_ring.server_list) of
-         true -> Serverlist;
-         false ->
-            Position = location(Server),
+  case gen_tcp:connect(Server#server.host, Server#server.port, [binary, {packet, 0}, {active, false}]) of
+       {ok, Socket} ->
+            Server1 = Server#server{socket=Socket},
+            Position = location(Server1),
             New = lists:map(fun(P) -> {P, Server} end, Position),
             ServerNum = Serverlist#server_ring.server_num +1,
             _Serverlist1 = Serverlist#server_ring{
@@ -233,7 +226,9 @@ addserver(Server, Serverlist) ->
                  server_num=ServerNum, 
                  points = lists:append(New, Serverlist#server_ring.points),
                  server_list = lists:append([Server],Serverlist#server_ring.server_list )
-            }
+            };
+        Error ->
+            {error, Error}
     end.
 
 findserver(_Key, Serverlist) when Serverlist#server_ring.server_num =< 1 ->

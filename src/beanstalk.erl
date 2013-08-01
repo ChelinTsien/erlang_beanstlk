@@ -1,7 +1,5 @@
 %% @author chelin
 %% @doc @todo Add description to beanstalk.
-
-
 -module(beanstalk).
 %% ====================================================================
 %% API functions
